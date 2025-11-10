@@ -115,13 +115,12 @@ Two primary metrics monitored:
 
 Plotted four key metrics across training epochs:
 
-![alt text](results.png)
-
+![alt text](image.png)
 | Plot                | Metric                                          | Observation                                                    |
 | ------------------- | ----------------------------------------------- | -------------------------------------------------------------- |
 | 🔵 **Top Left**     | Training Loss                                   | Steady decline → indicates convergence.                        |
-| 🟢 **Top Right**    | Rotation Error (°)                              | Gradual decrease from ~78° → ~40°.                             |
-| 🔴 **Bottom Left**  | Translation Error (L1)                          | Reduced from 0.052 → 0.042, showing improved spatial accuracy. |
+| 🟢 **Top Right**    | Rotation Error (°)                              | Gradual decrease from ~93° → ~28°.                             |
+| 🔴 **Bottom Left**  | Translation Error (L1)                          | Reduced from 0.081 → 0.037, showing improved spatial accuracy. |
 | 🟣 **Bottom Right** | Validation ADD(S) and [SR@0.1d](mailto:SR@0.1d) | Validation stabilized around 0.18–0.22 ADD(S).                 |
 
 ---
@@ -130,10 +129,10 @@ Plotted four key metrics across training epochs:
 
 | Metric                    | Initial | Final (Epoch 30) | Trend                    |
 | ------------------------- | ------- | ---------------- | ------------------------ |
-| Training Loss             | 1.45    | 0.79             | ↓ Decreasing steadily    |
-| Rotation Error            | 78°     | 41°              | ↓ Strong improvement     |
-| Translation Error         | 0.052   | 0.042            | ↓ Consistent improvement |
-| Mean ADD(S)               | ~0.30   | ~0.18            | ↓ Stable after 15 epochs |
+| Training Loss             | 1.749    | 0.544             | ↓ Decreasing steadily    |
+| Rotation Error            | 93°     | 28°              | ↓ Strong improvement     |
+| Translation Error         | 0.081   | 0.037            | ↓ Consistent improvement |
+| Mean ADD(S)               | ~0.28   | ~0.14            | ↓ Stable after 15 epochs |
 | [SR@0.1d](mailto:SR@0.1d) | <0.01   | <0.02            | ↔ Minimal but consistent |
 
 ✅ **Key Insight**:
