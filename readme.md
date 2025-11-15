@@ -1,150 +1,233 @@
 
+
 # 🧠 FormerPose: Transformer-based 6D Object Pose Estimation
+
 
 ## 📘 Overview
 
-**FormerPose** is a deep learning model designed for **6D object pose estimation** — predicting an object’s 3D rotation and translation from RGB or RGB-D images.
-The model leverages **transformer-based attention** mechanisms for robust spatial feature aggregation, improving over conventional CNN-based pose estimators.
+**FormerPose** is a Transformer-based deep learning model for **6D object pose estimation**, predicting an object’s **3D rotation (R)** and **3D translation (t)** from RGB or RGB-D images.
+It uses **multi-scale fusion**, **depthwise separable convolutions**, and **global self-attention** for robust feature extraction.
 
-This implementation focuses on **training and evaluating FormerPose** on the **LINEMOD** or **YCB-Video** dataset.
+This repository includes:
 
----
-
-## ⚙️ Flow of Implementation
-
-### **1. Environment Setup**
-
-* Installed essential libraries:
-
-  ```bash
-  torch, torchvision, timm, einops, open3d, transforms3d, tqdm, opencv-python, scipy, matplotlib
-  ```
-* Verified GPU availability via `nvidia-smi`.
+* Training FormerPose from scratch
+* Evaluating on **single-object** and **multi-object (full dataset)**
+* Inference with ADD(S) metric
+* Visualization of predicted vs ground-truth object point clouds
+* Ready-to-use notebooks & pre-trained checkpoints
 
 ---
 
-### **2. Dataset Download and Extraction**
+# 📂 Repository Structure
 
-* Downloaded **LINEMOD** dataset from Google Drive using `gdown`.
-* Extracted dataset and organized folder structure for training and testing splits.
-* Dataset includes RGB images, depth maps, and 3D object models.
+```
+formerPose_implementation/
+│
+├── notebooks/
+│   ├── FormerPose.ipynb
+│   ├── FormerPose_v1_2.ipynb
+│
+├── checkpoints/
+│   ├── best.pt          # Best model trained on full dataset
+│   ├── last.pt          # Last epoch checkpoint
+│
+├── results/
+│   ├── initial_results.png
+│   ├── results_for_single_obj.png
+│   ├── results_full_dataset.png
+│
+├── inference/
+│   ├── inference_results.csv
+│   ├── viz_10_obj0_add0.0547.png
+│   ├── viz_18_obj0_add0.0374.png
+│   ├── viz_19_obj0_add0.0214.png
+│   ├── viz_34_obj0_add0.0362.png
+│   ├── viz_51_obj0_add0.0405.png
+│   ├── viz_58_obj0_add0.0237.png
+│   ├── viz_71_obj0_add0.0559.png
+│   ├── viz_100_obj0_add0.0401.png
+│
+└── readme.md
+```
+
+
+---
+# 🧩 Model Architecture
+
+### ✔ Depthwise Separable Convolutions
+
+Efficient and lightweight local feature extraction.
+
+### ✔ Multi-Scale Fusion
+
+Combines shallow + deep features before attention.
+
+### ✔ Transformer Encoder
+
+Captures long-range spatial dependencies.
+
+### ✔ Pose Regression Head
+
+Outputs:
+
+* **Rotation** (quaternion or SE(3))
+* **Translation** (3D vector)
 
 ---
 
-### **3. Configuration Setup**
+# 📚 Training Pipeline
 
-Defined training parameters in a config dictionary (`CFG`):
+1. **Dataset Loader**
 
-```python
-CFG = {
-    "data_root": "/content/data",
-    "dataset": "linemod",
-    "batch_size": 8,
-    "num_workers": 4,
-    "epochs": 30,
-    "lr": 2e-4,
-    "wd": 1e-4,
-    "img_size": 480,
-    "pc_n": 1000,
-    ...
-}
+   * RGB, depth, mask loading
+   * Back-projection to 3D point cloud
+   * Normalization + resizing
+   * GT pose generation
+
+2. **Forward Pass**
+
+   * Image → CNN → Transformer → Pose Regression
+
+3. **Loss Functions**
+
+   * Geodesic rotation loss
+   * L1 translation loss
+   * Optional point-matching loss
+
+4. **Optimizer**
+
+   * AdamW
+
+5. **Validation (every epoch)**
+
+   * Compute **ADD(S)**
+   * Compute **[SR@0.1d](mailto:SR@0.1d)**
+
+6. **Logging**
+
+   * Loss curves
+   * Rotation / translation curves
+   * Validation plots
+
+---
+
+# 📊 Training Results
+
+## **1️⃣ Initial Training Results (Baseline Model)**
+
+![Initial Results](results/initial_results.png)
+
+---
+
+## **2️⃣ Results for Model Trained on a Single Object**
+
+
+![Single Object Results](results/results_for_single_obj.png)
+
+
+---
+
+## **3️⃣ Results for Model Trained on the Full LINEMOD Dataset**
+
+
+![Full Dataset Results](results/results_full_dataset.png)
+
+
+---
+
+# 🧪 Inference Results (Qualitative + Quantitative)
+
+The model was evaluated on unseen LINEMOD test frames.
+For each frame:
+
+* Green dots = **ground truth point cloud**
+* Red dots = **predicted pose-transformed point cloud**
+* Title displays ADD(S) error in meters
+
+---
+
+## **Inference Visualizations**
+
+<table>
+  <tr>
+    <td align="center">
+      <img src="inference/viz_10_obj0_add0.0547.png" width="250"><br>
+      <sub>ADD = 0.0547 m</sub>
+    </td>
+    <td align="center">
+      <img src="inference/viz_18_obj0_add0.0374.png" width="250"><br>
+      <sub>ADD = 0.0374 m</sub>
+    </td>
+    <td align="center">
+      <img src="inference/viz_19_obj0_add0.0214.png" width="250"><br>
+      <sub>ADD = 0.0214 m</sub>
+    </td>
+    <td align="center">
+      <img src="inference/viz_34_obj0_add0.0362.png" width="250"><br>
+      <sub>ADD = 0.0362 m</sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="inference/viz_51_obj0_add0.0405.png" width="250"><br>
+      <sub>ADD = 0.0405 m</sub>
+    </td>
+    <td align="center">
+      <img src="inference/viz_58_obj0_add0.0237.png" width="250"><br>
+      <sub>ADD = 0.0237 m</sub>
+    </td>
+    <td align="center">
+      <img src="inference/viz_71_obj0_add0.0559.png" width="250"><br>
+      <sub>ADD = 0.0559 m</sub>
+    </td>
+    <td align="center">
+      <img src="inference/viz_100_obj0_add0.0401.png" width="250"><br>
+      <sub>ADD = 0.0401 m</sub>
+    </td>
+  </tr>
+</table>
+
+
+
+---
+
+
+# 🧪 Results Summary
+
+| Metric                    | Initial Model | Single Object | Full Dataset |
+| ------------------------- | ------------- | ------------- | ------------ |
+| Training Loss             | ↓             | ↓             | ↓, best      |
+| Rotation Error            | Moderate      | Lower         | Lowest       |
+| Translation Error         | Moderate      | Lower         | Lowest       |
+| ADD(S)                    | Fluctuating   | Stable        | Most stable  |
+| [SR@0.1d](mailto:SR@0.1d) | Very low      | Moderate      | Best         |
+
+**Observation:**
+Training on the full dataset provides the best generalization and pose accuracy.
+
+---
+
+# 🗂 Pretrained Checkpoints
+
+Place your files in `checkpoints/`:
+
+* `formerpose_best.pt`
+* `formerpose_last.pt`
+
+
+
+# 🪪 Citation
+
+```
+Hou, P., Zhang, Y., Wu, Y., Yan, P., & Zhang, F. (2024). FormerPose: An efficient multi-scale fusion Transformer network based on RGB-D for 6D pose estimation. Journal of Visual Communication and Image Representation, 106, 104346. https://doi.org/10.1016/j.jvcir.2024.104346
 ```
 
 ---
 
-### **4. Utility Functions**
+# 🙌 Acknowledgements
 
-* **Transformation Helpers**:
+Thanks to:
 
-  * Convert between rotation matrices, quaternions, and SE(3) transformations.
-  * Back-project depth maps to 3D point clouds.
-* **Evaluation Metrics**:
-
-  * ADD-S metric for symmetric objects.
-  * [SR@0.1d](mailto:SR@0.1d) success rate.
-
----
-
-### **5. Dataset Class**
-
-`LinemodDataset` handles:
-
-* Loading RGB, depth, and mask images.
-* Extracting valid 3D points.
-* Normalizing and resizing images.
-* Generating ground-truth pose labels `(R, t)`.
-
----
-
-### **6. Model Architecture**
-
-**FormerPose** is built using:
-
-* **Depthwise separable convolutions (DWConv)** for efficient feature extraction.
-* **Transformer Encoder blocks** for global attention.
-* **Pose Regression Head** predicting:
-
-  * **Rotation (R)** – as quaternion or matrix.
-  * **Translation (t)** – as 3D vector.
-
----
-
-### **7. Training Pipeline**
-
-* Used PyTorch `DataLoader` for batch processing.
-* Loss functions:
-
-  * **Rotation Loss** (geodesic distance)
-  * **Translation Loss** (L1 distance)
-* Optimizer: `AdamW`
-* Learning rate: `2e-4`
-* Periodic validation after every few epochs.
-
----
-
-### **8. Evaluation Metrics**
-
-Two primary metrics monitored:
-
-* **ADD(S)** – Average Distance of Model Points for symmetric/asymmetric objects.
-* **[SR@0.1d](mailto:SR@0.1d)** – Success Rate with threshold 0.1d.
-
----
-
-### **9. Visualization**
-
-Plotted four key metrics across training epochs:
-
-![alt text](image.png)
-| Plot                | Metric                                          | Observation                                                    |
-| ------------------- | ----------------------------------------------- | -------------------------------------------------------------- |
-| 🔵 **Top Left**     | Training Loss                                   | Steady decline → indicates convergence.                        |
-| 🟢 **Top Right**    | Rotation Error (°)                              | Gradual decrease from ~93° → ~28°.                             |
-| 🔴 **Bottom Left**  | Translation Error (L1)                          | Reduced from 0.081 → 0.037, showing improved spatial accuracy. |
-| 🟣 **Bottom Right** | Validation ADD(S) and [SR@0.1d](mailto:SR@0.1d) | Validation stabilized around 0.18–0.22 ADD(S).                 |
-
----
-
-## 🧩 Results Summary
-
-| Metric                    | Initial | Final (Epoch 30) | Trend                    |
-| ------------------------- | ------- | ---------------- | ------------------------ |
-| Training Loss             | 1.749    | 0.544             | ↓ Decreasing steadily    |
-| Rotation Error            | 93°     | 28°              | ↓ Strong improvement     |
-| Translation Error         | 0.081   | 0.037            | ↓ Consistent improvement |
-| Mean ADD(S)               | ~0.28   | ~0.14            | ↓ Stable after 15 epochs |
-| [SR@0.1d](mailto:SR@0.1d) | <0.01   | <0.02            | ↔ Minimal but consistent |
-
-✅ **Key Insight**:
-The model successfully learns spatial and rotational relationships over epochs, demonstrating convergence and improving both rotation and translation predictions. Validation stability after ~15 epochs suggests good generalization.
-
----
-
-## 🪪 Citation
-
-> Hou, P., Zhang, Y., Wu, Y., Yan, P., & Zhang, F. (2024).
-> **FormerPose: An efficient multi-scale fusion Transformer network based on RGB-D for 6D pose estimation.**
-> *Journal of Visual Communication and Image Representation, 106*, 104346.
-> [https://doi.org/10.1016/j.jvcir.2024.104346](https://doi.org/10.1016/j.jvcir.2024.104346)
-
----
+* FormerPose authors
+* LINEMOD dataset team
+* Faculty & mentors guiding the project
